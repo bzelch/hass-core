@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from enum import IntEnum
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, override
 
 from chip.clusters import Objects as clusters
 from matter_server.client.models import device_types
@@ -93,6 +93,7 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
                     return mode
         return None
 
+    @override
     async def async_stop(self, **kwargs: Any) -> None:
         """Stop the vacuum cleaner."""
         # We simply set the RvcRunMode to the first runmode
@@ -108,14 +109,17 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
             clusters.RvcRunMode.Commands.ChangeToMode(newMode=mode.mode)
         )
 
+    @override
     async def async_return_to_base(self, **kwargs: Any) -> None:
         """Set the vacuum cleaner to return to the dock."""
         await self.send_device_command(clusters.RvcOperationalState.Commands.GoHome())
 
+    @override
     async def async_locate(self, **kwargs: Any) -> None:
         """Locate the vacuum cleaner."""
         await self.send_device_command(clusters.Identify.Commands.Identify())
 
+    @override
     async def async_start(self) -> None:
         """Start or resume the cleaning task."""
         if TYPE_CHECKING:
@@ -156,6 +160,7 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
             clusters.RvcRunMode.Commands.ChangeToMode(newMode=mode.mode)
         )
 
+    @override
     async def async_pause(self) -> None:
         """Pause the cleaning task."""
         await self.send_device_command(clusters.RvcOperationalState.Commands.Pause())
@@ -182,6 +187,7 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
 
         return segments
 
+    @override
     async def async_get_segments(self) -> list[Segment]:
         """Get the segments that can be cleaned.
 
@@ -189,6 +195,7 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
         """
         return list(self._current_segments.values())
 
+    @override
     async def async_clean_segments(self, segment_ids: list[str], **kwargs: Any) -> None:
         """Clean the specified segments.
 
@@ -215,7 +222,8 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
             != clusters.ServiceArea.Enums.SelectAreasStatus.kSuccess
         ):
             raise HomeAssistantError(
-                f"Failed to select areas: {response['statusText'] or response['status']}"
+                "Failed to select areas: "
+                f"{response['statusText'] or response['status']}"
             )
 
         await self.send_device_command(
@@ -223,6 +231,7 @@ class MatterVacuum(MatterEntity, StateVacuumEntity):
         )
 
     @callback
+    @override
     def _update_from_device(self) -> None:
         """Update from device."""
         self._calculate_features()
